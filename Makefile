@@ -71,7 +71,7 @@ install: ## install the binary locally
 
 ################################################################################
 # RELEASE
-release: version-patch release-github release-cargo release-brew release-aur release-commit ## full release: bump + github + cargo + brew + aur + commit
+release: format check version-patch release-github release-cargo release-brew release-aur release-commit ## full release: bump + github + cargo + brew + aur + commit
 
 release-github: build-macos build-linux ## create GitHub release with platform binaries
 	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \

@@ -269,7 +269,10 @@ fn install_copy_skips_unchanged_file() {
     config.dotfiles.get_mut("f_file").unwrap().dst = dst_dir.join("file");
 
     // record mtime before
-    let mtime_before = std::fs::metadata(dst_dir.join("file")).unwrap().modified().unwrap();
+    let mtime_before = std::fs::metadata(dst_dir.join("file"))
+        .unwrap()
+        .modified()
+        .unwrap();
 
     // small sleep to ensure mtime would differ if file was written
     std::thread::sleep(std::time::Duration::from_millis(50));
@@ -278,8 +281,14 @@ fn install_copy_skips_unchanged_file() {
     installer.install().unwrap();
 
     // mtime should be unchanged — file was not rewritten
-    let mtime_after = std::fs::metadata(dst_dir.join("file")).unwrap().modified().unwrap();
-    assert_eq!(mtime_before, mtime_after, "file was rewritten despite matching content");
+    let mtime_after = std::fs::metadata(dst_dir.join("file"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert_eq!(
+        mtime_before, mtime_after,
+        "file was rewritten despite matching content"
+    );
 }
 
 #[test]

@@ -221,21 +221,31 @@ fn install_template_skips_unchanged_file() {
     std::fs::create_dir_all(&dst_dir).unwrap();
 
     // pre-write the exact rendered content
-    let expected = "[user]\n    name = Test User\n    email = user@test.com\n[core]\n    editor = nvim\n";
+    let expected =
+        "[user]\n    name = Test User\n    email = user@test.com\n[core]\n    editor = nvim\n";
     std::fs::write(dst_dir.join("config"), expected).unwrap();
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
     let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_template").unwrap().dst = dst_dir.join("config");
 
-    let mtime_before = std::fs::metadata(dst_dir.join("config")).unwrap().modified().unwrap();
+    let mtime_before = std::fs::metadata(dst_dir.join("config"))
+        .unwrap()
+        .modified()
+        .unwrap();
     std::thread::sleep(std::time::Duration::from_millis(50));
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
 
-    let mtime_after = std::fs::metadata(dst_dir.join("config")).unwrap().modified().unwrap();
-    assert_eq!(mtime_before, mtime_after, "template was rewritten despite matching content");
+    let mtime_after = std::fs::metadata(dst_dir.join("config"))
+        .unwrap()
+        .modified()
+        .unwrap();
+    assert_eq!(
+        mtime_before, mtime_after,
+        "template was rewritten despite matching content"
+    );
 }
 
 #[test]
