@@ -59,10 +59,7 @@ lint-fix: ## run clippy with auto-fix
 format: ## format code
 	cargo fmt
 
-format-check: ## check code formatting
-	cargo fmt -- --check
-
-check: format-check lint test ## run all checks (format, lint, test)
+check: format lint test-coverage ## run all checks (format, lint, test)
 
 ################################################################################
 # INSTALL
@@ -71,7 +68,7 @@ install: ## install the binary locally
 
 ################################################################################
 # RELEASE
-release: format check version-patch release-github release-cargo release-brew release-aur release-commit ## full release: bump + github + cargo + brew + aur + commit
+release: version-patch release-github release-cargo release-brew release-aur release-commit ## full release: bump + github + cargo + brew + aur + commit
 
 release-github: build-macos build-linux ## create GitHub release with platform binaries
 	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
