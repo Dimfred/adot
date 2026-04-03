@@ -215,6 +215,54 @@ fn install_template_write_readonly_dst_fails() {
 }
 
 #[test]
+fn install_template_skips_unchanged_file() {
+    let dst_dir = PathBuf::from("/tmp/adot_tests/install_template_skip_unchanged/dst");
+    let _ = std::fs::remove_dir_all(&dst_dir);
+    std::fs::create_dir_all(&dst_dir).unwrap();
+
+    // pre-write the exact rendered content
+    let expected = "[user]\n    name = Test User\n    email = user@test.com\n[core]\n    editor = nvim\n";
+    std::fs::write(dst_dir.join("config"), expected).unwrap();
+
+    let config_path = fixtures_dir().join("config_install_template.yaml");
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
+    config.dotfiles.get_mut("f_template").unwrap().dst = dst_dir.join("config");
+
+    let mtime_before = std::fs::metadata(dst_dir.join("config")).unwrap().modified().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
+    installer.install().unwrap();
+
+    let mtime_after = std::fs::metadata(dst_dir.join("config")).unwrap().modified().unwrap();
+    assert_eq!(mtime_before, mtime_after, "template was rewritten despite matching content");
+}
+
+#[test]
+fn install_template_create_parent_fails() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let base = PathBuf::from("/tmp/adot_tests/install_template_create_parent_fails");
+    let locked = base.join("locked");
+    if locked.exists() {
+        let _ = std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755));
+    }
+    let _ = std::fs::remove_dir_all(&base);
+    std::fs::create_dir_all(&locked).unwrap();
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o555)).unwrap();
+
+    let config_path = fixtures_dir().join("config_install_template.yaml");
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
+    config.dotfiles.get_mut("f_template").unwrap().dst = locked.join("newdir/output");
+
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
+    let err = installer.install().unwrap_err();
+    assert!(err.contains("failed to create dir"), "got: {err}");
+
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+}
+
+#[test]
 fn install_template_missing_src_fails() {
     let content = r#"
 dotfiles:

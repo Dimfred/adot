@@ -254,3 +254,55 @@ fn install_copy_dir_does_not_destroy_existing_contents() {
         "also survives"
     );
 }
+
+#[test]
+fn install_copy_skips_unchanged_file() {
+    let dst_dir = PathBuf::from("/tmp/adot_tests/install_copy_skip_unchanged/dst");
+    let _ = std::fs::remove_dir_all(&dst_dir);
+    std::fs::create_dir_all(&dst_dir).unwrap();
+
+    // pre-write the exact content that copy would produce
+    std::fs::write(dst_dir.join("file"), "hello\n").unwrap();
+
+    let config_path = fixtures_dir().join("config_install_copy.yaml");
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
+    config.dotfiles.get_mut("f_file").unwrap().dst = dst_dir.join("file");
+
+    // record mtime before
+    let mtime_before = std::fs::metadata(dst_dir.join("file")).unwrap().modified().unwrap();
+
+    // small sleep to ensure mtime would differ if file was written
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
+    installer.install().unwrap();
+
+    // mtime should be unchanged — file was not rewritten
+    let mtime_after = std::fs::metadata(dst_dir.join("file")).unwrap().modified().unwrap();
+    assert_eq!(mtime_before, mtime_after, "file was rewritten despite matching content");
+}
+
+#[test]
+fn install_copy_single_file_create_parent_fails() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let base = PathBuf::from("/tmp/adot_tests/install_copy_create_parent_fails");
+    let locked = base.join("locked");
+    if locked.exists() {
+        let _ = std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755));
+    }
+    let _ = std::fs::remove_dir_all(&base);
+    std::fs::create_dir_all(&locked).unwrap();
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o555)).unwrap();
+
+    let config_path = fixtures_dir().join("config_install_copy.yaml");
+    let mut config = Config::load(Some(&config_path)).unwrap().0;
+    // dst parent needs to be created but grandparent is readonly
+    config.dotfiles.get_mut("f_file").unwrap().dst = locked.join("newdir/file");
+
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
+    let err = installer.install().unwrap_err();
+    assert!(err.contains("failed to create dir"), "got: {err}");
+
+    std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
+}

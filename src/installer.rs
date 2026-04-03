@@ -103,8 +103,14 @@ impl Installer {
     }
 
     fn install_link(&self, name: &str, dotfile: &Dotfile) -> Result<(), String> {
-        let src = self.prepare_dst(name, dotfile)?;
+        let src = self.resolve_src(&dotfile.src);
         let dst = &dotfile.dst;
+
+        if symlink_matches(dst, &src) {
+            return Ok(());
+        }
+
+        let src = self.prepare_dst(name, dotfile)?;
 
         self.log(&format!("link: {} -> {}", dst.display(), src.display()));
 
@@ -130,17 +136,21 @@ impl Installer {
             ));
         }
 
-        self.log(&format!("copy: {} -> {}", src.display(), dst.display()));
-
         if src.is_dir() {
-            copy_dir_recursive(&src, dst).map_err(|e| {
+            let changed = copy_dir_recursive(&src, dst).map_err(|e| {
                 format!(
                     "dotfile '{name}': failed to copy {} -> {}: {e}",
                     src.display(),
                     dst.display()
                 )
             })?;
+            if changed {
+                self.log(&format!("copy: {} -> {}", src.display(), dst.display()));
+            }
         } else {
+            if file_matches(dst, &fs::read(&src).unwrap_or_default()) {
+                return Ok(());
+            }
             // for single files, create parent and overwrite
             let parent = dst.parent().expect("dst must have a parent");
             fs::create_dir_all(parent).map_err(|e| {
@@ -156,14 +166,22 @@ impl Installer {
                     dst.display()
                 )
             })?;
+            self.log(&format!("copy: {} -> {}", src.display(), dst.display()));
         }
 
         Ok(())
     }
 
     fn install_template(&self, name: &str, dotfile: &Dotfile) -> Result<(), String> {
-        let src = self.prepare_dst(name, dotfile)?;
+        let src = self.resolve_src(&dotfile.src);
         let dst = &dotfile.dst;
+
+        if !src.exists() {
+            return Err(format!(
+                "dotfile '{name}': src does not exist: {}",
+                src.display()
+            ));
+        }
 
         let variables = self.resolve_variables();
 
@@ -187,6 +205,19 @@ impl Installer {
             .map_err(|e| format!("dotfile '{name}': failed to read {}: {e}", src.display()))?;
 
         let rendered = template::render(&content, variables, &self.profile)?;
+
+        if file_matches(dst, rendered.as_bytes()) {
+            return Ok(());
+        }
+
+        if let Some(parent) = dst.parent() {
+            fs::create_dir_all(parent).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to create dir {}: {e}",
+                    parent.display()
+                )
+            })?;
+        }
 
         self.log(&format!("template: {} -> {}", src.display(), dst.display()));
 
@@ -290,6 +321,10 @@ impl Installer {
             let child_src = entry.path();
             let child_dst = dst.join(entry.file_name());
 
+            if symlink_matches(&child_dst, &child_src) {
+                continue;
+            }
+
             // remove existing child dst
             if child_dst.exists() || child_dst.symlink_metadata().is_ok() {
                 let msg = format!("failed to remove existing {}", child_dst.display());
@@ -361,20 +396,44 @@ impl Installer {
     }
 }
 
-fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<(), std::io::Error> {
+/// Check if dst is already a symlink pointing to the expected src
+fn symlink_matches(dst: &Path, expected_src: &Path) -> bool {
+    match fs::read_link(dst) {
+        Ok(target) => target == expected_src,
+        Err(_) => false,
+    }
+}
+
+/// Returns true if any file was changed
+fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<bool, std::io::Error> {
     fs::create_dir_all(dst)?;
+    let mut changed = false;
     for entry in fs::read_dir(src)? {
         let msg = format!("failed to read dir entry in {}", src.display());
         let entry = entry.expect(&msg);
         let src_path = entry.path();
         let dst_path = dst.join(entry.file_name());
         if src_path.is_dir() {
-            copy_dir_recursive(&src_path, &dst_path)?;
+            if copy_dir_recursive(&src_path, &dst_path)? {
+                changed = true;
+            }
         } else {
-            fs::copy(&src_path, &dst_path)?;
+            let src_bytes = fs::read(&src_path)?;
+            if !file_matches(&dst_path, &src_bytes) {
+                fs::copy(&src_path, &dst_path)?;
+                changed = true;
+            }
         }
     }
-    Ok(())
+    Ok(changed)
+}
+
+/// Check if a file exists and has the expected content
+fn file_matches(path: &Path, expected: &[u8]) -> bool {
+    match fs::read(path) {
+        Ok(content) => content == expected,
+        Err(_) => false,
+    }
 }
 
 fn remove_path(path: &Path) -> Result<(), std::io::Error> {
