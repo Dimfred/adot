@@ -122,8 +122,24 @@ release-aur: ## update AUR PKGBUILD, commit and push to AUR
 	sed -i '' "s|^pkgver=.*|pkgver=$$VERSION|" package/aur/PKGBUILD; \
 	sed -i '' "s|^sha256sums=.*|sha256sums=('$$SHA')|" package/aur/PKGBUILD; \
 	echo "PKGBUILD updated for v$$VERSION"; \
-	cp package/aur/PKGBUILD ../$(PROJECT_NAME)-bin/; \
-	cd ../$(PROJECT_NAME)-bin && makepkg --printsrcinfo > .SRCINFO && git add . && git commit -m "Update to v$$VERSION" && git push; \
+	echo "Generating .SRCINFO..." && \
+	printf '%s\n' \
+		"pkgbase = $(PROJECT_NAME)-bin" \
+		"	pkgdesc = A minimal dotfile manager" \
+		"	pkgver = $$VERSION" \
+		"	pkgrel = 1" \
+		"	url = https://github.com/Dimfred/$(PROJECT_NAME)" \
+		"	arch = x86_64" \
+		"	license = MIT" \
+		"	provides = $(PROJECT_NAME)" \
+		"	conflicts = $(PROJECT_NAME)" \
+		"	source = $(PROJECT_NAME)-bin-$$VERSION::https://github.com/Dimfred/$(PROJECT_NAME)/releases/download/v$$VERSION/linux-$(PROJECT_NAME)-v$$VERSION-x86_64" \
+		"	sha256sums = $$SHA" \
+		"" \
+		"pkgname = $(PROJECT_NAME)-bin" > package/aur/.SRCINFO; \
+	cp package/aur/PKGBUILD ../$(PROJECT_NAME)-bin/PKGBUILD; \
+	cp package/aur/.SRCINFO ../$(PROJECT_NAME)-bin/.SRCINFO; \
+	cd ../$(PROJECT_NAME)-bin && git add PKGBUILD .SRCINFO && git commit -m "Update to v$$VERSION" && git push; \
 	echo "Pushed to AUR"
 
 version-patch: ## bump patch version (0.1.0 -> 0.1.1)
