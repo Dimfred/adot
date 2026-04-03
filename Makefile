@@ -20,9 +20,6 @@ build-macos: ## cross-compile for macOS (arm64)
 build-linux: ## cross-compile for Linux (x86_64)
 	cargo zigbuild --release --target x86_64-unknown-linux-gnu
 
-build-windows: ## cross-compile for Windows (x86_64)
-	cargo zigbuild --release --target x86_64-pc-windows-gnu
-
 run: ## run the project
 	cargo run
 
@@ -76,12 +73,11 @@ install: ## install the binary locally
 # RELEASE
 release: release-github release-cargo release-brew release-aur ## full release: github + cargo + brew + aur
 
-release-github: build-macos build-linux build-windows ## create GitHub release with all platform binaries
+release-github: build-macos build-linux ## create GitHub release with platform binaries
 	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
 	mkdir -p releases; \
 	cp target/aarch64-apple-darwin/release/$(PROJECT_NAME) "releases/macos-$(PROJECT_NAME)-v$${VERSION}-arm64"; \
 	cp target/x86_64-unknown-linux-gnu/release/$(PROJECT_NAME) "releases/linux-$(PROJECT_NAME)-v$${VERSION}-x86_64"; \
-	cp target/x86_64-pc-windows-gnu/release/$(PROJECT_NAME).exe "releases/windows-$(PROJECT_NAME)-v$${VERSION}-x86_64.exe"; \
 	echo "Binaries copied to releases/"; \
 	if gh release view "v$$VERSION" >/dev/null 2>&1; then \
 		echo "Release v$$VERSION already exists"; \
@@ -96,7 +92,6 @@ release-github: build-macos build-linux build-windows ## create GitHub release w
 	gh release create "v$$VERSION" \
 		"releases/macos-$(PROJECT_NAME)-v$${VERSION}-arm64" \
 		"releases/linux-$(PROJECT_NAME)-v$${VERSION}-x86_64" \
-		"releases/windows-$(PROJECT_NAME)-v$${VERSION}-x86_64.exe" \
 		--title "v$$VERSION" \
 		--notes "$(PROJECT_NAME) v$$VERSION" \
 		--latest; \
@@ -147,7 +142,7 @@ version-patch: ## bump patch version (0.1.0 -> 0.1.1)
 init: ## initialize dev environment (deps, rust targets, zigbuild)
 	cargo fetch
 	brew install zig@0.14
-	rustup target add aarch64-apple-darwin x86_64-unknown-linux-gnu x86_64-pc-windows-gnu
+	rustup target add aarch64-apple-darwin x86_64-unknown-linux-gnu
 	cargo install cargo-zigbuild
 	cargo install cargo-llvm-cov
 	rustup component add llvm-tools-preview
