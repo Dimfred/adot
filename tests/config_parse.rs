@@ -10,11 +10,17 @@ fn parse_link_children() {
     assert_eq!(config.dotpath, PathBuf::from("dotfiles"));
 
     let dotfile = config.dotfiles.get("d_config").expect("d_config not found");
-    assert_eq!(dotfile.dst, PathBuf::from("/tmp/adot_tests/link_children/dst/"));
+    assert_eq!(
+        dotfile.dst,
+        PathBuf::from("/tmp/adot_tests/link_children/dst/")
+    );
     assert_eq!(dotfile.src, PathBuf::from("config/"));
     assert_eq!(dotfile.dtype, DotfileType::LinkChildren);
 
-    let profile = config.profiles.get("test-host").expect("test-host not found");
+    let profile = config
+        .profiles
+        .get("test-host")
+        .expect("test-host not found");
     assert_eq!(profile.dotfiles, vec!["d_config"]);
     assert!(profile.include.is_empty());
 }
@@ -25,7 +31,10 @@ fn parse_copy() {
     let config = Config::load(Some(&path)).unwrap();
 
     let dotfile = config.dotfiles.get("f_bashrc").expect("f_bashrc not found");
-    assert_eq!(dotfile.dst, PathBuf::from("/tmp/adot_tests/copy/dst/.bashrc"));
+    assert_eq!(
+        dotfile.dst,
+        PathBuf::from("/tmp/adot_tests/copy/dst/.bashrc")
+    );
     assert_eq!(dotfile.src, PathBuf::from("bashrc"));
     assert_eq!(dotfile.dtype, DotfileType::Copy);
 }
@@ -35,10 +44,16 @@ fn parse_template_with_variables() {
     let path = PathBuf::from("tests/fixtures/config_template.yaml");
     let config = Config::load(Some(&path)).unwrap();
 
-    let dotfile = config.dotfiles.get("f_gitconfig").expect("f_gitconfig not found");
+    let dotfile = config
+        .dotfiles
+        .get("f_gitconfig")
+        .expect("f_gitconfig not found");
     assert_eq!(dotfile.dtype, DotfileType::Template);
 
-    let profile = config.profiles.get("test-host").expect("test-host not found");
+    let profile = config
+        .profiles
+        .get("test-host")
+        .expect("test-host not found");
 
     // flat variable
     let editor = profile.variables.get("editor").expect("editor not found");
@@ -49,7 +64,10 @@ fn parse_template_with_variables() {
     match git {
         adot::config::Variable::Nested(map) => {
             let email = map.get("email").expect("email not found");
-            assert_eq!(*email, adot::config::Variable::Value("test@example.com".to_string()));
+            assert_eq!(
+                *email,
+                adot::config::Variable::Value("test@example.com".to_string())
+            );
         }
         _ => panic!("expected nested variable for 'git'"),
     }
@@ -63,7 +81,10 @@ fn parse_link_explicit() {
     let zshrc = config.dotfiles.get("f_zshrc").expect("f_zshrc not found");
     assert_eq!(zshrc.dtype, DotfileType::Link);
 
-    let aliases = config.dotfiles.get("f_aliases").expect("f_aliases not found");
+    let aliases = config
+        .dotfiles
+        .get("f_aliases")
+        .expect("f_aliases not found");
     assert_eq!(aliases.dtype, DotfileType::Link);
 }
 
@@ -84,7 +105,10 @@ fn parse_profile_include() {
     assert_eq!(base.dotfiles, vec!["f_zshrc"]);
     assert!(base.include.is_empty());
 
-    let host = config.profiles.get("test-host").expect("test-host not found");
+    let host = config
+        .profiles
+        .get("test-host")
+        .expect("test-host not found");
     assert_eq!(host.dotfiles, vec!["f_aliases"]);
     assert_eq!(host.include, vec!["base"]);
 }
@@ -146,7 +170,10 @@ variables:
     bg: black
 "#;
     let config = adot::parser::parse(content).unwrap();
-    assert_eq!(config.variables.get("editor"), Some(&Variable::Value("vim".to_string())));
+    assert_eq!(
+        config.variables.get("editor"),
+        Some(&Variable::Value("vim".to_string()))
+    );
 
     match config.variables.get("colors") {
         Some(Variable::Nested(map)) => {
@@ -167,7 +194,10 @@ dynvariables:
   os: "uname -s"
 "#;
     let config = adot::parser::parse(content).unwrap();
-    assert_eq!(config.dynvariables.get("hostname"), Some(&"hostname -s".to_string()));
+    assert_eq!(
+        config.dynvariables.get("hostname"),
+        Some(&"hostname -s".to_string())
+    );
     assert_eq!(config.dynvariables.get("os"), Some(&"uname -s".to_string()));
 }
 
@@ -185,9 +215,18 @@ profiles:
 "#;
     let config = adot::parser::parse(content).unwrap();
     let profile = config.profiles.get("test").expect("test profile not found");
-    assert_eq!(profile.variables.get("thermal_zone"), Some(&Variable::Value("3".to_string())));
-    assert_eq!(profile.variables.get("ratio"), Some(&Variable::Value("1.5".to_string())));
-    assert_eq!(profile.variables.get("enabled"), Some(&Variable::Value("true".to_string())));
+    assert_eq!(
+        profile.variables.get("thermal_zone"),
+        Some(&Variable::Value("3".to_string()))
+    );
+    assert_eq!(
+        profile.variables.get("ratio"),
+        Some(&Variable::Value("1.5".to_string()))
+    );
+    assert_eq!(
+        profile.variables.get("enabled"),
+        Some(&Variable::Value("true".to_string()))
+    );
 }
 
 #[test]
@@ -202,7 +241,10 @@ profiles:
 "#;
     let config = adot::parser::parse(content).unwrap();
     let profile = config.profiles.get("test").expect("test profile not found");
-    assert_eq!(profile.dynvariables.get("user"), Some(&"whoami".to_string()));
+    assert_eq!(
+        profile.dynvariables.get("user"),
+        Some(&"whoami".to_string())
+    );
 }
 
 #[test]
@@ -217,7 +259,10 @@ profiles:
 "#;
     let config = adot::parser::parse(content).unwrap();
     let profile = config.profiles.get("test").expect("test profile not found");
-    assert_eq!(profile.variables.get("empty_val"), Some(&Variable::Value("".to_string())));
+    assert_eq!(
+        profile.variables.get("empty_val"),
+        Some(&Variable::Value("".to_string()))
+    );
 }
 
 #[test]

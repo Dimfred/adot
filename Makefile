@@ -59,13 +59,13 @@ lint: ## run clippy linter
 lint-fix: ## run clippy with auto-fix
 	cargo clippy --fix --allow-dirty -- -D warnings
 
-fmt: ## format code
+format: ## format code
 	cargo fmt
 
-fmt-check: ## check code formatting
+format-check: ## check code formatting
 	cargo fmt -- --check
 
-check: fmt-check lint test ## run all checks (fmt, lint, test)
+check: format-check lint test ## run all checks (format, lint, test)
 
 ################################################################################
 # INSTALL

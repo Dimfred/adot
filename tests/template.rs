@@ -7,12 +7,21 @@ fn make_vars() -> HashMap<String, Variable> {
     let mut vars = HashMap::new();
 
     let mut git = HashMap::new();
-    git.insert("email".to_string(), Variable::Value("user@test.com".to_string()));
+    git.insert(
+        "email".to_string(),
+        Variable::Value("user@test.com".to_string()),
+    );
     vars.insert("git".to_string(), Variable::Nested(git));
 
     let mut colors = HashMap::new();
-    colors.insert("foreground".to_string(), Variable::Value("#AABBCC".to_string()));
-    colors.insert("background".to_string(), Variable::Value("#000000".to_string()));
+    colors.insert(
+        "foreground".to_string(),
+        Variable::Value("#AABBCC".to_string()),
+    );
+    colors.insert(
+        "background".to_string(),
+        Variable::Value("#000000".to_string()),
+    );
     vars.insert("colors".to_string(), Variable::Nested(colors));
 
     vars.insert("editor".to_string(), Variable::Value("nvim".to_string()));
@@ -80,7 +89,8 @@ fn conditional_profile_match_includes_block() {
 #[test]
 fn conditional_profile_no_match_excludes_block() {
     let vars = make_vars();
-    let input = "before\n{%@@ if profile == \"other-host\" @@%}\nexcluded\n{%@@ endif @@%}\nafter\n";
+    let input =
+        "before\n{%@@ if profile == \"other-host\" @@%}\nexcluded\n{%@@ endif @@%}\nafter\n";
     let result = render(input, &vars, "test-host").unwrap();
     assert_eq!(result, "before\nafter\n");
 }
@@ -196,14 +206,26 @@ fn render_ini_style_multiple_vars() {
     let mut vars = HashMap::new();
 
     let mut colors = HashMap::new();
-    colors.insert("background".to_string(), Variable::Value("#111111".to_string()));
+    colors.insert(
+        "background".to_string(),
+        Variable::Value("#111111".to_string()),
+    );
     vars.insert("colors".to_string(), Variable::Nested(colors));
 
     let mut polybar = HashMap::new();
-    polybar.insert("modules_right".to_string(), Variable::Value("vpn wifi lan battery".to_string()));
+    polybar.insert(
+        "modules_right".to_string(),
+        Variable::Value("vpn wifi lan battery".to_string()),
+    );
     polybar.insert("thermal_zone".to_string(), Variable::Value("3".to_string()));
-    polybar.insert("wifi_interface".to_string(), Variable::Value("wlan0".to_string()));
-    polybar.insert("eth_interface".to_string(), Variable::Value("eth0".to_string()));
+    polybar.insert(
+        "wifi_interface".to_string(),
+        Variable::Value("wlan0".to_string()),
+    );
+    polybar.insert(
+        "eth_interface".to_string(),
+        Variable::Value("eth0".to_string()),
+    );
     vars.insert("polybar".to_string(), Variable::Nested(polybar));
 
     let input = r#"[colors]

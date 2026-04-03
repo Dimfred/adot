@@ -18,26 +18,27 @@ fn install_copy_file_and_dir() {
     let config_path = fixtures_dir().join("config_install_copy.yaml");
     let config = Config::load(Some(&config_path)).unwrap();
 
-    let installer = Installer::new(
-        config,
-        "test-host".to_string(),
-        fixtures_dir(),
-        true,
-    );
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
 
     // check file copy — should NOT be a symlink
     let file_dst = dst_dir.join("file");
     assert!(file_dst.exists(), "dst file should exist");
     let meta = file_dst.symlink_metadata().unwrap();
-    assert!(!meta.file_type().is_symlink(), "copy should not be a symlink");
+    assert!(
+        !meta.file_type().is_symlink(),
+        "copy should not be a symlink"
+    );
     assert_eq!(std::fs::read_to_string(&file_dst).unwrap(), "hello\n");
 
     // check dir copy — should NOT be a symlink
     let dir_dst = dst_dir.join("dir");
     assert!(dir_dst.exists(), "dst dir should exist");
     let meta = dir_dst.symlink_metadata().unwrap();
-    assert!(!meta.file_type().is_symlink(), "copy should not be a symlink");
+    assert!(
+        !meta.file_type().is_symlink(),
+        "copy should not be a symlink"
+    );
     assert!(dir_dst.is_dir(), "should be a real directory");
 
     let inner = dir_dst.join("file_in_dir");
@@ -88,7 +89,10 @@ fn install_copy_overwrites_existing() {
     installer.install().unwrap();
 
     let meta = file_dst.symlink_metadata().unwrap();
-    assert!(!meta.file_type().is_symlink(), "should be a regular file, not symlink");
+    assert!(
+        !meta.file_type().is_symlink(),
+        "should be a regular file, not symlink"
+    );
     assert_eq!(std::fs::read_to_string(&file_dst).unwrap(), "hello\n");
 }
 
@@ -104,7 +108,12 @@ fn install_copy_idempotent() {
         df.dst = dst_dir.join(name);
     }
 
-    let installer = Installer::new(config.clone(), "test-host".to_string(), fixtures_dir(), true);
+    let installer = Installer::new(
+        config.clone(),
+        "test-host".to_string(),
+        fixtures_dir(),
+        true,
+    );
     installer.install().unwrap();
 
     // run again
@@ -144,12 +153,7 @@ fn install_copy_unreadable_src_dir_fails() {
     config.dotfiles.get_mut("f_file").unwrap().src = PathBuf::from("file");
     config.dotfiles.get_mut("f_file").unwrap().dst = dst_dir.join("file");
 
-    let installer = Installer::new(
-        config,
-        "test-host".to_string(),
-        base.clone(),
-        true,
-    );
+    let installer = Installer::new(config, "test-host".to_string(), base.clone(), true);
     let err = installer.install().unwrap_err();
     assert!(err.contains("failed to copy"), "got: {err}");
 
@@ -176,7 +180,10 @@ fn install_copy_single_file_readonly_dst_fails() {
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     let err = installer.install().unwrap_err();
-    assert!(err.contains("failed to copy") || err.contains("failed to create dir"), "got: {err}");
+    assert!(
+        err.contains("failed to copy") || err.contains("failed to create dir"),
+        "got: {err}"
+    );
 
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o755)).unwrap();
 }
@@ -220,12 +227,30 @@ fn install_copy_dir_does_not_destroy_existing_contents() {
     installer.install().unwrap();
 
     // source files should be copied
-    assert_eq!(std::fs::read_to_string(dst_dir.join("file_in_dir")).unwrap(), "inside dir\n");
-    assert_eq!(std::fs::read_to_string(dst_dir.join("subdir/nested_file")).unwrap(), "nested\n");
+    assert_eq!(
+        std::fs::read_to_string(dst_dir.join("file_in_dir")).unwrap(),
+        "inside dir\n"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dst_dir.join("subdir/nested_file")).unwrap(),
+        "nested\n"
+    );
 
     // pre-existing files must still be there
-    assert!(dst_dir.join("existing_file").exists(), "existing_file was destroyed");
-    assert_eq!(std::fs::read_to_string(dst_dir.join("existing_file")).unwrap(), "must survive");
-    assert!(dst_dir.join("existing_subdir/data").exists(), "existing_subdir/data was destroyed");
-    assert_eq!(std::fs::read_to_string(dst_dir.join("existing_subdir/data")).unwrap(), "also survives");
+    assert!(
+        dst_dir.join("existing_file").exists(),
+        "existing_file was destroyed"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dst_dir.join("existing_file")).unwrap(),
+        "must survive"
+    );
+    assert!(
+        dst_dir.join("existing_subdir/data").exists(),
+        "existing_subdir/data was destroyed"
+    );
+    assert_eq!(
+        std::fs::read_to_string(dst_dir.join("existing_subdir/data")).unwrap(),
+        "also survives"
+    );
 }

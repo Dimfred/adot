@@ -132,7 +132,9 @@ fn parse_string_list(yaml: &Yaml) -> Vec<String> {
         None => return Vec::new(),
     };
 
-    arr.iter().filter_map(|item| item.as_str().map(String::from)).collect()
+    arr.iter()
+        .filter_map(|item| item.as_str().map(String::from))
+        .collect()
 }
 
 fn parse_string_map(yaml: &Yaml) -> HashMap<String, String> {

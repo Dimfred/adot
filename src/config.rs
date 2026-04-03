@@ -74,7 +74,10 @@ impl Config {
         for (name, dotfile) in &self.dotfiles {
             // src must never equal dst
             if dotfile.src == dotfile.dst {
-                return Err(format!("dotfile '{name}': src and dst are the same path: {}", dotfile.src.display()));
+                return Err(format!(
+                    "dotfile '{name}': src and dst are the same path: {}",
+                    dotfile.src.display()
+                ));
             }
 
             // dst must not point inside dotpath (would delete source files)

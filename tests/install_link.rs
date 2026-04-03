@@ -19,19 +19,17 @@ fn install_link_file_and_dir() {
     let config_path = fixtures_dir().join("config_install_link.yaml");
     let config = Config::load(Some(&config_path)).unwrap();
 
-    let installer = Installer::new(
-        config,
-        "test-host".to_string(),
-        fixtures_dir(),
-        true,
-    );
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
 
     // check file symlink
     let file_dst = dst_dir.join("file");
     assert!(file_dst.exists(), "dst file should exist");
     let meta = file_dst.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "file dst should be a symlink");
+    assert!(
+        meta.file_type().is_symlink(),
+        "file dst should be a symlink"
+    );
     let target = std::fs::read_link(&file_dst).unwrap();
     assert_eq!(target, fixtures_dir().join("dotfiles/file"));
     assert_eq!(std::fs::read_to_string(&file_dst).unwrap(), "hello\n");
@@ -44,7 +42,10 @@ fn install_link_file_and_dir() {
     let target = std::fs::read_link(&dir_dst).unwrap();
     assert_eq!(target, fixtures_dir().join("dotfiles/dir"));
     let inner = dir_dst.join("file_in_dir");
-    assert!(inner.exists(), "file_in_dir should be accessible through symlink");
+    assert!(
+        inner.exists(),
+        "file_in_dir should be accessible through symlink"
+    );
     assert_eq!(std::fs::read_to_string(&inner).unwrap(), "inside dir\n");
 }
 
@@ -66,7 +67,10 @@ fn install_link_overwrites_existing_file() {
     installer.install().unwrap();
 
     let meta = file_dst.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "file should be replaced with symlink");
+    assert!(
+        meta.file_type().is_symlink(),
+        "file should be replaced with symlink"
+    );
     assert_eq!(std::fs::read_to_string(&file_dst).unwrap(), "hello\n");
 }
 
@@ -90,7 +94,10 @@ fn install_link_does_not_replace_existing_dir() {
 
     // directory must survive
     assert!(dir_dst.is_dir(), "directory must not be removed");
-    assert_eq!(std::fs::read_to_string(dir_dst.join("stale")).unwrap(), "stale");
+    assert_eq!(
+        std::fs::read_to_string(dir_dst.join("stale")).unwrap(),
+        "stale"
+    );
 }
 
 #[test]
@@ -129,7 +136,12 @@ fn install_link_idempotent() {
         df.dst = dst_dir.join(name);
     }
 
-    let installer = Installer::new(config2.clone(), "test-host".to_string(), fixtures_dir(), true);
+    let installer = Installer::new(
+        config2.clone(),
+        "test-host".to_string(),
+        fixtures_dir(),
+        true,
+    );
     installer.install().unwrap();
 
     // run again — should not fail
@@ -165,12 +177,7 @@ fn install_link_missing_src_fails() {
     let config_path = fixtures_dir().join("config_install_link_missing_src.yaml");
     let config = Config::load(Some(&config_path)).unwrap();
 
-    let installer = Installer::new(
-        config,
-        "test-host".to_string(),
-        fixtures_dir(),
-        true,
-    );
+    let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     let err = installer.install().unwrap_err();
     assert!(err.contains("src does not exist"), "got: {err}");
 }
@@ -245,8 +252,14 @@ profiles:
     installer.install().unwrap();
 
     // both from base and child should be installed
-    assert!(dst_dir.join("file").exists(), "file from base should be installed");
-    assert!(dst_dir.join("dir").exists(), "dir from child should be installed");
+    assert!(
+        dst_dir.join("file").exists(),
+        "file from base should be installed"
+    );
+    assert!(
+        dst_dir.join("dir").exists(),
+        "dir from child should be installed"
+    );
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -355,7 +368,10 @@ fn install_link_never_removes_existing_directory() {
     // the directory and its contents MUST still exist
     assert!(target.exists(), "directory was removed — CATASTROPHIC");
     assert!(target.is_dir(), "directory was replaced — CATASTROPHIC");
-    assert!(target.join("must_survive").exists(), "contents were destroyed — CATASTROPHIC");
+    assert!(
+        target.join("must_survive").exists(),
+        "contents were destroyed — CATASTROPHIC"
+    );
     assert_eq!(
         std::fs::read_to_string(target.join("must_survive")).unwrap(),
         "important data"
@@ -396,7 +412,10 @@ profiles:
     // directory and pre-existing contents MUST survive
     assert!(target.exists(), "directory was removed — CATASTROPHIC");
     assert!(target.is_dir(), "directory was replaced — CATASTROPHIC");
-    assert!(target.join("must_survive").exists(), "contents were destroyed — CATASTROPHIC");
+    assert!(
+        target.join("must_survive").exists(),
+        "contents were destroyed — CATASTROPHIC"
+    );
     assert_eq!(
         std::fs::read_to_string(target.join("must_survive")).unwrap(),
         "important data"

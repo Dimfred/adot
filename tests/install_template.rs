@@ -25,10 +25,14 @@ fn install_template_file() {
     assert!(dst.exists(), "template output should exist");
 
     let meta = dst.symlink_metadata().unwrap();
-    assert!(!meta.file_type().is_symlink(), "template output should not be a symlink");
+    assert!(
+        !meta.file_type().is_symlink(),
+        "template output should not be a symlink"
+    );
 
     let content = std::fs::read_to_string(&dst).unwrap();
-    let expected = "[user]\n    name = Test User\n    email = user@test.com\n[core]\n    editor = nvim\n";
+    let expected =
+        "[user]\n    name = Test User\n    email = user@test.com\n[core]\n    editor = nvim\n";
     assert_eq!(content, expected);
 }
 
@@ -70,7 +74,9 @@ fn install_template_dir_with_matching_profile() {
 
     // add the special-host profile with same vars
     let test_profile = config.profiles.get("test-host").unwrap().clone();
-    config.profiles.insert("special-host".to_string(), test_profile);
+    config
+        .profiles
+        .insert("special-host".to_string(), test_profile);
 
     let installer = Installer::new(config, "special-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
@@ -108,7 +114,12 @@ fn install_template_idempotent() {
     let mut config = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_template").unwrap().dst = dst_dir.join("config");
 
-    let installer = Installer::new(config.clone(), "test-host".to_string(), fixtures_dir(), true);
+    let installer = Installer::new(
+        config.clone(),
+        "test-host".to_string(),
+        fixtures_dir(),
+        true,
+    );
     installer.install().unwrap();
 
     // run again

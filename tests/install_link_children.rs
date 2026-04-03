@@ -24,27 +24,39 @@ fn install_link_children_creates_symlinks_per_child() {
     // dst should be a real directory, not a symlink
     assert!(dst_dir.exists());
     let meta = dst_dir.symlink_metadata().unwrap();
-    assert!(!meta.file_type().is_symlink(), "dst dir itself should not be a symlink");
+    assert!(
+        !meta.file_type().is_symlink(),
+        "dst dir itself should not be a symlink"
+    );
     assert!(meta.is_dir());
 
     // each child should be a symlink
     let child_file = dst_dir.join("file_in_dir");
     assert!(child_file.exists(), "file_in_dir should exist");
     let meta = child_file.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "child file should be a symlink");
+    assert!(
+        meta.file_type().is_symlink(),
+        "child file should be a symlink"
+    );
     let target = std::fs::read_link(&child_file).unwrap();
     assert_eq!(target, fixtures_dir().join("dotfiles/dir/file_in_dir"));
 
     let child_subdir = dst_dir.join("subdir");
     assert!(child_subdir.exists(), "subdir should exist");
     let meta = child_subdir.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "child subdir should be a symlink");
+    assert!(
+        meta.file_type().is_symlink(),
+        "child subdir should be a symlink"
+    );
     let target = std::fs::read_link(&child_subdir).unwrap();
     assert_eq!(target, fixtures_dir().join("dotfiles/dir/subdir"));
 
     // nested file accessible through symlinked subdir
     let nested = child_subdir.join("nested_file");
-    assert!(nested.exists(), "nested_file should be accessible through symlinked subdir");
+    assert!(
+        nested.exists(),
+        "nested_file should be accessible through symlinked subdir"
+    );
     assert_eq!(std::fs::read_to_string(&nested).unwrap(), "nested\n");
 }
 
@@ -69,12 +81,21 @@ fn install_link_children_overwrites_existing_children() {
     // children should now be symlinks
     let child_file = dst_dir.join("file_in_dir");
     let meta = child_file.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "should be replaced with symlink");
-    assert_eq!(std::fs::read_to_string(&child_file).unwrap(), "inside dir\n");
+    assert!(
+        meta.file_type().is_symlink(),
+        "should be replaced with symlink"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&child_file).unwrap(),
+        "inside dir\n"
+    );
 
     let child_subdir = dst_dir.join("subdir");
     let meta = child_subdir.symlink_metadata().unwrap();
-    assert!(meta.file_type().is_symlink(), "subdir should be replaced with symlink");
+    assert!(
+        meta.file_type().is_symlink(),
+        "subdir should be replaced with symlink"
+    );
 }
 
 #[test]
@@ -86,7 +107,12 @@ fn install_link_children_idempotent() {
     let mut config = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = dst_dir.clone();
 
-    let installer = Installer::new(config.clone(), "test-host".to_string(), fixtures_dir(), true);
+    let installer = Installer::new(
+        config.clone(),
+        "test-host".to_string(),
+        fixtures_dir(),
+        true,
+    );
     installer.install().unwrap();
 
     // run again
@@ -96,7 +122,10 @@ fn install_link_children_idempotent() {
     let child_file = dst_dir.join("file_in_dir");
     let meta = child_file.symlink_metadata().unwrap();
     assert!(meta.file_type().is_symlink());
-    assert_eq!(std::fs::read_to_string(&child_file).unwrap(), "inside dir\n");
+    assert_eq!(
+        std::fs::read_to_string(&child_file).unwrap(),
+        "inside dir\n"
+    );
 }
 
 #[test]

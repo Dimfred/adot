@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use adot::config::{resolve_config_path, Config};
+use adot::config::{Config, resolve_config_path};
 
 #[test]
 fn resolve_overwrite_exists() {

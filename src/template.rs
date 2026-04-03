@@ -108,7 +108,9 @@ fn eval_if_profile(condition: &str, profile: &str) -> Result<bool, String> {
     let rhs = parts[1].trim().trim_matches('"');
 
     if lhs != "profile" {
-        return Err(format!("unsupported condition variable: {lhs} (only 'profile' supported)"));
+        return Err(format!(
+            "unsupported condition variable: {lhs} (only 'profile' supported)"
+        ));
     }
 
     Ok(profile == rhs)
@@ -121,12 +123,7 @@ fn replace_variables(
 ) -> Result<String, String> {
     let mut result = content.to_string();
 
-    loop {
-        let start = match result.find("{{@@") {
-            Some(pos) => pos,
-            None => break,
-        };
-
+    while let Some(start) = result.find("{{@@") {
         let end = match result[start..].find("@@}}") {
             Some(pos) => start + pos + 4,
             None => return Err(format!("unclosed {{{{@@ at position {start}")),
@@ -141,13 +138,12 @@ fn replace_variables(
 }
 
 /// Resolve a dotted key like `git.email` or `colors.foreground` from nested variables
-fn resolve_variable(
-    key: &str,
-    variables: &HashMap<String, Variable>,
-) -> Result<String, String> {
+fn resolve_variable(key: &str, variables: &HashMap<String, Variable>) -> Result<String, String> {
     let parts: Vec<&str> = key.split('.').collect();
 
-    let first = parts.first().expect("split always returns at least one element");
+    let first = parts
+        .first()
+        .expect("split always returns at least one element");
     if first.is_empty() {
         return Err("empty variable key".to_string());
     }
@@ -165,7 +161,9 @@ fn resolve_variable(
                     .ok_or_else(|| format!("undefined variable: {key}"))?;
             }
             Variable::Value(_) => {
-                return Err(format!("variable '{first}' is not nested, cannot resolve: {key}"));
+                return Err(format!(
+                    "variable '{first}' is not nested, cannot resolve: {key}"
+                ));
             }
         }
     }

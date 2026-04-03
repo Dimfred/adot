@@ -37,7 +37,11 @@ impl Installer {
             }
         }
 
-        self.log(&format!("installed {} dotfiles in {:.2?}", dotfile_names.len(), start.elapsed()));
+        self.log(&format!(
+            "installed {} dotfiles in {:.2?}",
+            dotfile_names.len(),
+            start.elapsed()
+        ));
 
         Ok(())
     }
@@ -68,20 +72,31 @@ impl Installer {
         let dst = &dotfile.dst;
 
         if !src.exists() {
-            return Err(format!("dotfile '{name}': src does not exist: {}", src.display()));
+            return Err(format!(
+                "dotfile '{name}': src does not exist: {}",
+                src.display()
+            ));
         }
 
         // safe: validate() ensures dst is never empty
         let parent = dst.parent().expect("dst must have a parent");
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("dotfile '{name}': failed to create dir {}: {e}", parent.display()))?;
+        fs::create_dir_all(parent).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to create dir {}: {e}",
+                parent.display()
+            )
+        })?;
 
         // only remove files and symlinks, NEVER real directories
-        if let Ok(meta) = dst.symlink_metadata() {
-            if meta.file_type().is_symlink() || meta.is_file() {
-                fs::remove_file(dst)
-                    .map_err(|e| format!("dotfile '{name}': failed to remove existing {}: {e}", dst.display()))?;
-            }
+        if let Ok(meta) = dst.symlink_metadata()
+            && (meta.file_type().is_symlink() || meta.is_file())
+        {
+            fs::remove_file(dst).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to remove existing {}: {e}",
+                    dst.display()
+                )
+            })?;
         }
 
         Ok(src)
@@ -93,8 +108,13 @@ impl Installer {
 
         self.log(&format!("link: {} -> {}", dst.display(), src.display()));
 
-        unix_fs::symlink(&src, dst)
-            .map_err(|e| format!("dotfile '{name}': failed to symlink {} -> {}: {e}", dst.display(), src.display()))?;
+        unix_fs::symlink(&src, dst).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to symlink {} -> {}: {e}",
+                dst.display(),
+                src.display()
+            )
+        })?;
 
         Ok(())
     }
@@ -104,21 +124,38 @@ impl Installer {
         let dst = &dotfile.dst;
 
         if !src.exists() {
-            return Err(format!("dotfile '{name}': src does not exist: {}", src.display()));
+            return Err(format!(
+                "dotfile '{name}': src does not exist: {}",
+                src.display()
+            ));
         }
 
         self.log(&format!("copy: {} -> {}", src.display(), dst.display()));
 
         if src.is_dir() {
-            copy_dir_recursive(&src, dst)
-                .map_err(|e| format!("dotfile '{name}': failed to copy {} -> {}: {e}", src.display(), dst.display()))?;
+            copy_dir_recursive(&src, dst).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to copy {} -> {}: {e}",
+                    src.display(),
+                    dst.display()
+                )
+            })?;
         } else {
             // for single files, create parent and overwrite
             let parent = dst.parent().expect("dst must have a parent");
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("dotfile '{name}': failed to create dir {}: {e}", parent.display()))?;
-            fs::copy(&src, dst)
-                .map_err(|e| format!("dotfile '{name}': failed to copy {} -> {}: {e}", src.display(), dst.display()))?;
+            fs::create_dir_all(parent).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to create dir {}: {e}",
+                    parent.display()
+                )
+            })?;
+            fs::copy(&src, dst).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to copy {} -> {}: {e}",
+                    src.display(),
+                    dst.display()
+                )
+            })?;
         }
 
         Ok(())
@@ -166,11 +203,19 @@ impl Installer {
         dst: &Path,
         variables: &std::collections::HashMap<String, Variable>,
     ) -> Result<(), String> {
-        fs::create_dir_all(dst)
-            .map_err(|e| format!("dotfile '{name}': failed to create dir {}: {e}", dst.display()))?;
+        fs::create_dir_all(dst).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to create dir {}: {e}",
+                dst.display()
+            )
+        })?;
 
-        let entries = fs::read_dir(src)
-            .map_err(|e| format!("dotfile '{name}': failed to read dir {}: {e}", src.display()))?;
+        let entries = fs::read_dir(src).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to read dir {}: {e}",
+                src.display()
+            )
+        })?;
 
         for entry in entries {
             let msg = format!("failed to read dir entry in {}", src.display());
@@ -194,7 +239,11 @@ impl Installer {
         let mut merged = self.config.variables.clone();
 
         // safe: install() already validates the profile exists
-        let profile = self.config.profiles.get(&self.profile).expect("profile must exist");
+        let profile = self
+            .config
+            .profiles
+            .get(&self.profile)
+            .expect("profile must exist");
         for (key, value) in &profile.variables {
             merged.insert(key.clone(), value.clone());
         }
@@ -207,18 +256,32 @@ impl Installer {
         let dst = &dotfile.dst;
 
         if !src.exists() {
-            return Err(format!("dotfile '{name}': src does not exist: {}", src.display()));
+            return Err(format!(
+                "dotfile '{name}': src does not exist: {}",
+                src.display()
+            ));
         }
 
         if !src.is_dir() {
-            return Err(format!("dotfile '{name}': link_children requires a directory, got: {}", src.display()));
+            return Err(format!(
+                "dotfile '{name}': link_children requires a directory, got: {}",
+                src.display()
+            ));
         }
 
-        fs::create_dir_all(dst)
-            .map_err(|e| format!("dotfile '{name}': failed to create dir {}: {e}", dst.display()))?;
+        fs::create_dir_all(dst).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to create dir {}: {e}",
+                dst.display()
+            )
+        })?;
 
-        let entries = fs::read_dir(&src)
-            .map_err(|e| format!("dotfile '{name}': failed to read dir {}: {e}", src.display()))?;
+        let entries = fs::read_dir(&src).map_err(|e| {
+            format!(
+                "dotfile '{name}': failed to read dir {}: {e}",
+                src.display()
+            )
+        })?;
 
         for entry in entries {
             let msg = format!("failed to read dir entry in {}", src.display());
@@ -233,10 +296,19 @@ impl Installer {
                 remove_path(&child_dst).expect(&msg);
             }
 
-            self.log(&format!("link_children: {} -> {}", child_dst.display(), child_src.display()));
+            self.log(&format!(
+                "link_children: {} -> {}",
+                child_dst.display(),
+                child_src.display()
+            ));
 
-            unix_fs::symlink(&child_src, &child_dst)
-                .map_err(|e| format!("dotfile '{name}': failed to symlink {} -> {}: {e}", child_dst.display(), child_src.display()))?;
+            unix_fs::symlink(&child_src, &child_dst).map_err(|e| {
+                format!(
+                    "dotfile '{name}': failed to symlink {} -> {}: {e}",
+                    child_dst.display(),
+                    child_src.display()
+                )
+            })?;
         }
 
         Ok(())
@@ -262,7 +334,9 @@ impl Installer {
         visited: &mut Vec<String>,
     ) -> Result<(), String> {
         if visited.contains(&profile_name.to_string()) {
-            return Err(format!("circular profile include detected: '{profile_name}'"));
+            return Err(format!(
+                "circular profile include detected: '{profile_name}'"
+            ));
         }
         visited.push(profile_name.to_string());
 
