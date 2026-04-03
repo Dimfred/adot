@@ -16,7 +16,7 @@ fn install_copy_file_and_dir() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
@@ -57,7 +57,7 @@ fn install_copy_is_independent_of_source() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     let file_dst = dst_dir.join("file");
     config.dotfiles.get_mut("f_file").unwrap().dst = file_dst.clone();
 
@@ -82,7 +82,7 @@ fn install_copy_overwrites_existing() {
     std::fs::write(&file_dst, "old content").unwrap();
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = file_dst.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -102,7 +102,7 @@ fn install_copy_idempotent() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     for df in config.dotfiles.values_mut() {
         let name = df.dst.file_name().unwrap().to_owned();
         df.dst = dst_dir.join(name);
@@ -147,7 +147,7 @@ fn install_copy_unreadable_src_dir_fails() {
     let dst_dir = base.join("dst");
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().src = PathBuf::from("locked_dir");
     config.dotfiles.get_mut("d_dir").unwrap().dst = dst_dir.join("locked_dir");
     config.dotfiles.get_mut("f_file").unwrap().src = PathBuf::from("file");
@@ -175,7 +175,7 @@ fn install_copy_single_file_readonly_dst_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = locked_dir.join("file");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -220,7 +220,7 @@ fn install_copy_dir_does_not_destroy_existing_contents() {
     std::fs::write(dst_dir.join("existing_subdir/data"), "also survives").unwrap();
 
     let config_path = fixtures_dir().join("config_install_copy.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = dst_dir.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);

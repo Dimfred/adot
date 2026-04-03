@@ -16,21 +16,8 @@ fn main() {
 }
 
 fn run(cli: &Cli) -> Result<(), String> {
-    let config = Config::load(cli.config.as_ref())?;
+    let (config, config_dir) = Config::load(cli.config.as_ref())?;
     let profile = cli::resolve_profile(cli.profile.as_deref())?;
-
-    let config_dir = match cli.config.as_ref() {
-        Some(path) => path
-            .parent()
-            .ok_or_else(|| "config path has no parent".to_string())?
-            .canonicalize()
-            .map_err(|e| format!("failed to resolve config dir: {e}"))?,
-        None => config
-            .dotpath
-            .parent()
-            .unwrap_or(std::path::Path::new("."))
-            .to_path_buf(),
-    };
 
     match &cli.command {
         Command::Install => {

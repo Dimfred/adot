@@ -71,7 +71,7 @@ install: ## install the binary locally
 
 ################################################################################
 # RELEASE
-release: release-github release-cargo release-brew release-aur ## full release: github + cargo + brew + aur
+release: version-patch release-github release-cargo release-brew release-aur release-commit ## full release: bump + github + cargo + brew + aur + commit
 
 release-github: build-macos build-linux ## create GitHub release with platform binaries
 	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
@@ -102,12 +102,19 @@ release-cargo: ## publish to crates.io
 
 release-brew: ## update brew formula, commit and push to homebrew-tap
 	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
-	URL="https://github.com/Dimfred/$(PROJECT_NAME)/archive/refs/tags/v$${VERSION}.tar.gz"; \
-	echo "Fetching $$URL"; \
-	SHA=$$(curl -sL "$$URL" | shasum -a 256 | cut -d' ' -f1); \
-	echo "SHA256: $$SHA"; \
-	sed -i '' "s|url \".*\"|url \"$$URL\"|" package/brew/$(PROJECT_NAME).rb; \
-	sed -i '' "s|sha256 \".*\"|sha256 \"$$SHA\"|" package/brew/$(PROJECT_NAME).rb; \
+	MACOS_URL="https://github.com/Dimfred/$(PROJECT_NAME)/releases/download/v$${VERSION}/macos-$(PROJECT_NAME)-v$${VERSION}-arm64"; \
+	LINUX_URL="https://github.com/Dimfred/$(PROJECT_NAME)/releases/download/v$${VERSION}/linux-$(PROJECT_NAME)-v$${VERSION}-x86_64"; \
+	echo "Fetching macOS SHA..."; \
+	MACOS_SHA=$$(curl -sL "$$MACOS_URL" | shasum -a 256 | cut -d' ' -f1); \
+	echo "macOS SHA256: $$MACOS_SHA"; \
+	echo "Fetching Linux SHA..."; \
+	LINUX_SHA=$$(curl -sL "$$LINUX_URL" | shasum -a 256 | cut -d' ' -f1); \
+	echo "Linux SHA256: $$LINUX_SHA"; \
+	sed -i '' "s|version \".*\"|version \"$$VERSION\"|" package/brew/$(PROJECT_NAME).rb; \
+	sed -i '' "s|url \".*macos-.*\"|url \"$$MACOS_URL\"|" package/brew/$(PROJECT_NAME).rb; \
+	sed -i '' "s|url \".*linux-.*\"|url \"$$LINUX_URL\"|" package/brew/$(PROJECT_NAME).rb; \
+	sed -i '' "/macos-$(PROJECT_NAME)/{n;s|sha256 \".*\"|sha256 \"$$MACOS_SHA\"|;}" package/brew/$(PROJECT_NAME).rb; \
+	sed -i '' "/linux-$(PROJECT_NAME)/{n;s|sha256 \".*\"|sha256 \"$$LINUX_SHA\"|;}" package/brew/$(PROJECT_NAME).rb; \
 	echo "Formula updated for v$$VERSION"; \
 	cp package/brew/$(PROJECT_NAME).rb ../homebrew-tap/Formula/; \
 	cd ../homebrew-tap && git add . && git commit -m "Update $(PROJECT_NAME) to v$$VERSION" && git push; \
@@ -142,15 +149,23 @@ release-aur: ## update AUR PKGBUILD, commit and push to AUR
 	cd ../$(PROJECT_NAME)-bin && git add PKGBUILD .SRCINFO && git commit -m "Update to v$$VERSION" && git push; \
 	echo "Pushed to AUR"
 
+release-commit: ## commit and push package updates
+	@VERSION=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
+	git add package/; \
+	git commit --amend --no-edit; \
+	git push; \
+	echo "Pushed release v$$VERSION"
+
 version-patch: ## bump patch version (0.1.0 -> 0.1.1)
 	@CURRENT=$$(grep -m1 '^version = ' Cargo.toml | sed 's/version = "\(.*\)"/\1/'); \
 	IFS='.' read -r MAJOR MINOR PATCH <<< "$$CURRENT"; \
 	NEW_PATCH=$$((PATCH + 1)); \
 	NEW_VERSION="$$MAJOR.$$MINOR.$$NEW_PATCH"; \
 	sed -i '' "s/^version = \".*\"/version = \"$$NEW_VERSION\"/" Cargo.toml; \
+	cargo generate-lockfile; \
 	echo "Version bumped from $$CURRENT to $$NEW_VERSION"; \
-	git add Cargo.toml; \
-	git commit -m "chore: version bump"; \
+	git add Cargo.toml Cargo.lock; \
+	git commit -m "chore: bump v$$NEW_VERSION"; \
 	echo "Committed version bump"
 
 ################################################################################

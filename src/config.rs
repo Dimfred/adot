@@ -59,14 +59,21 @@ impl Default for Config {
 impl Config {
     /// Load config from file.
     /// Priority: overwrite path > $XDG_CONFIG_HOME/adot/config.yaml > ~/.config/adot/config.yaml > ~/.adot/config.yaml
-    pub fn load(overwrite: Option<&PathBuf>) -> Result<Self, String> {
+    /// Returns (Config, config_dir) where config_dir is the parent directory of config.yaml
+    pub fn load(overwrite: Option<&PathBuf>) -> Result<(Self, PathBuf), String> {
         let path = resolve_config_path(overwrite)?;
+        let config_dir = path
+            .parent()
+            .ok_or_else(|| "config path has no parent".to_string())?
+            .canonicalize()
+            .map_err(|e| format!("failed to resolve config dir: {e}"))?;
+
         let content = std::fs::read_to_string(&path)
             .map_err(|e| format!("failed to read {}: {}", path.display(), e))?;
 
         let config = crate::parser::parse(&content)?;
         config.validate()?;
-        Ok(config)
+        Ok((config, config_dir))
     }
 
     /// Validate config integrity after parsing.

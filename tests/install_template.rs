@@ -16,7 +16,7 @@ fn install_template_file() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
@@ -42,7 +42,7 @@ fn install_template_dir() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_template_dir").unwrap().dst = dst_dir.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -69,7 +69,7 @@ fn install_template_dir_with_matching_profile() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_template_dir").unwrap().dst = dst_dir.clone();
 
     // add the special-host profile with same vars
@@ -95,7 +95,7 @@ fn install_template_overwrites_existing() {
     std::fs::write(dst_dir.join("config"), "old content").unwrap();
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_template").unwrap().dst = dst_dir.join("config");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -111,7 +111,7 @@ fn install_template_idempotent() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_template").unwrap().dst = dst_dir.join("config");
 
     let installer = Installer::new(
@@ -136,7 +136,7 @@ fn install_template_nested_dir() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_template_dir").unwrap().dst = dst_dir.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -204,7 +204,7 @@ fn install_template_write_readonly_dst_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_template").unwrap().dst = locked_dir.join("output");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -333,7 +333,7 @@ fn install_template_dir_readonly_dst_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_template.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_template_dir").unwrap().dst = locked_dir.join("subdir");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);

@@ -5,7 +5,7 @@ use adot::config::{Config, DotfileType, Variable};
 #[test]
 fn parse_link_children() {
     let path = PathBuf::from("tests/fixtures/config_link_children.yaml");
-    let config = Config::load(Some(&path)).unwrap();
+    let (config, _) = Config::load(Some(&path)).unwrap();
 
     assert_eq!(config.dotpath, PathBuf::from("dotfiles"));
 
@@ -28,7 +28,7 @@ fn parse_link_children() {
 #[test]
 fn parse_copy() {
     let path = PathBuf::from("tests/fixtures/config_copy.yaml");
-    let config = Config::load(Some(&path)).unwrap();
+    let (config, _) = Config::load(Some(&path)).unwrap();
 
     let dotfile = config.dotfiles.get("f_bashrc").expect("f_bashrc not found");
     assert_eq!(
@@ -42,7 +42,7 @@ fn parse_copy() {
 #[test]
 fn parse_template_with_variables() {
     let path = PathBuf::from("tests/fixtures/config_template.yaml");
-    let config = Config::load(Some(&path)).unwrap();
+    let (config, _) = Config::load(Some(&path)).unwrap();
 
     let dotfile = config
         .dotfiles
@@ -76,7 +76,7 @@ fn parse_template_with_variables() {
 #[test]
 fn parse_link_explicit() {
     let path = PathBuf::from("tests/fixtures/config_link_default.yaml");
-    let config = Config::load(Some(&path)).unwrap();
+    let (config, _) = Config::load(Some(&path)).unwrap();
 
     let zshrc = config.dotfiles.get("f_zshrc").expect("f_zshrc not found");
     assert_eq!(zshrc.dtype, DotfileType::Link);
@@ -99,7 +99,7 @@ fn parse_missing_type_fails() {
 #[test]
 fn parse_profile_include() {
     let path = PathBuf::from("tests/fixtures/config_link_default.yaml");
-    let config = Config::load(Some(&path)).unwrap();
+    let (config, _) = Config::load(Some(&path)).unwrap();
 
     let base = config.profiles.get("base").expect("base not found");
     assert_eq!(base.dotfiles, vec!["f_zshrc"]);

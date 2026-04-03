@@ -16,7 +16,7 @@ fn install_link_children_creates_symlinks_per_child() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
@@ -72,7 +72,7 @@ fn install_link_children_overwrites_existing_children() {
     std::fs::write(dst_dir.join("subdir/old"), "old").unwrap();
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = dst_dir.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -104,7 +104,7 @@ fn install_link_children_idempotent() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = dst_dir.clone();
 
     let installer = Installer::new(
@@ -131,7 +131,7 @@ fn install_link_children_idempotent() {
 #[test]
 fn install_link_children_fails_on_file_src() {
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     // point src to a file instead of a dir
     config.dotfiles.get_mut("d_dir").unwrap().src = PathBuf::from("file");
 
@@ -143,7 +143,7 @@ fn install_link_children_fails_on_file_src() {
 #[test]
 fn install_link_children_missing_src_fails() {
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().src = PathBuf::from("does_not_exist");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -167,7 +167,7 @@ fn install_link_children_readonly_dst_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = locked_dir.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -194,7 +194,7 @@ fn install_link_children_create_dst_fails() {
     std::fs::set_permissions(&locked_parent, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     // dst is inside a readonly parent, so create_dir_all will fail
     config.dotfiles.get_mut("d_dir").unwrap().dst = locked_parent.join("new_subdir");
 
@@ -220,7 +220,7 @@ fn install_link_children_unreadable_src_dir_fails() {
     std::fs::set_permissions(&src_dir, std::fs::Permissions::from_mode(0o000)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link_children.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotpath = std::path::PathBuf::from(".");
     config.dotfiles.get_mut("d_dir").unwrap().src = PathBuf::from("locked_dir");
     config.dotfiles.get_mut("d_dir").unwrap().dst = base.join("dst");

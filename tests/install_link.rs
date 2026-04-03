@@ -17,7 +17,7 @@ fn install_link_file_and_dir() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     installer.install().unwrap();
@@ -59,7 +59,7 @@ fn install_link_overwrites_existing_file() {
     std::fs::write(&file_dst, "old content").unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     // repoint dst to our test dir
     config.dotfiles.get_mut("f_file").unwrap().dst = file_dst.clone();
 
@@ -85,7 +85,7 @@ fn install_link_does_not_replace_existing_dir() {
     std::fs::write(dir_dst.join("stale"), "stale").unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("d_dir").unwrap().dst = dir_dst.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -111,7 +111,7 @@ fn install_link_overwrites_existing_symlink() {
     unix_fs::symlink("/tmp/nonexistent_target", &file_dst).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = file_dst.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -128,7 +128,7 @@ fn install_link_idempotent() {
     let _ = std::fs::remove_dir_all(&dst_dir);
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let mut config2 = config.clone();
     for df in config2.dotfiles.values_mut() {
@@ -160,7 +160,7 @@ fn install_link_creates_parent_dirs() {
     let _ = std::fs::remove_dir_all("/tmp/adot_tests/install_link_parents");
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = dst_dir.join("file");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -175,7 +175,7 @@ fn install_link_creates_parent_dirs() {
 #[test]
 fn install_link_missing_src_fails() {
     let config_path = fixtures_dir().join("config_install_link_missing_src.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
     let err = installer.install().unwrap_err();
@@ -185,7 +185,7 @@ fn install_link_missing_src_fails() {
 #[test]
 fn install_link_profile_not_found() {
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let config = Config::load(Some(&config_path)).unwrap();
+    let (config, _) = Config::load(Some(&config_path)).unwrap();
 
     let installer = Installer::new(
         config,
@@ -279,7 +279,7 @@ fn install_link_readonly_parent_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = locked_dir.join("subdir/file");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -305,7 +305,7 @@ fn install_link_remove_readonly_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = locked_dir.join("file");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -329,7 +329,7 @@ fn install_link_symlink_readonly_dir_fails() {
     std::fs::set_permissions(&locked_dir, std::fs::Permissions::from_mode(0o555)).unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = locked_dir.join("file");
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
@@ -358,7 +358,7 @@ fn install_link_never_removes_existing_directory() {
     std::fs::write(target.join("must_survive"), "important data").unwrap();
 
     let config_path = fixtures_dir().join("config_install_link.yaml");
-    let mut config = Config::load(Some(&config_path)).unwrap();
+    let (mut config, _) = Config::load(Some(&config_path)).unwrap();
     config.dotfiles.get_mut("f_file").unwrap().dst = target.clone();
 
     let installer = Installer::new(config, "test-host".to_string(), fixtures_dir(), true);
