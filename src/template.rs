@@ -3,16 +3,25 @@ use std::collections::HashMap;
 use crate::config::Variable;
 
 /// Render a template string by replacing `{{@@ key @@}}` with variable values,
-/// evaluating `{%@@ if profile == "X" @@%}...{%@@ endif @@%}` conditionals,
+/// evaluating `{%@@ if profile == "X" @@%}` or `{%@@ if os == "X" @@%}` conditionals,
 /// and stripping `{#@@ ... @@#}` comments.
+///
+/// Built-in variables: `profile`, `os`
 pub fn render(
     content: &str,
     variables: &HashMap<String, Variable>,
     profile: &str,
 ) -> Result<String, String> {
+    let os = std::env::consts::OS;
+
+    // Inject built-in variables
+    let mut vars = variables.clone();
+    vars.insert("profile".to_string(), Variable::Value(profile.to_string()));
+    vars.insert("os".to_string(), Variable::Value(os.to_string()));
+
     let result = strip_comments(content);
-    let result = eval_conditionals(&result, profile)?;
-    let result = replace_variables(&result, variables)?;
+    let result = eval_conditionals(&result, profile, os)?;
+    let result = replace_variables(&result, &vars)?;
     Ok(result)
 }
 
@@ -31,7 +40,7 @@ fn strip_comments(content: &str) -> String {
 }
 
 /// Evaluate `{%@@ if/elif/endif @@%}` blocks
-fn eval_conditionals(content: &str, profile: &str) -> Result<String, String> {
+fn eval_conditionals(content: &str, profile: &str, os: &str) -> Result<String, String> {
     let mut result = String::new();
     let mut inside_block = false;
     let mut include_block = false;
@@ -59,8 +68,18 @@ fn eval_conditionals(content: &str, profile: &str) -> Result<String, String> {
                 .trim()
                 .trim_start_matches("el");
 
-            include_block = eval_if_profile(condition, profile)?;
+            include_block = eval_condition(condition, profile, os)?;
             if include_block {
+                already_matched = true;
+            }
+            continue;
+        }
+
+        if trimmed.starts_with("{%@@") && trimmed.contains("else") && trimmed.ends_with("@@%}") {
+            if already_matched {
+                include_block = false;
+            } else {
+                include_block = true;
                 already_matched = true;
             }
             continue;
@@ -72,7 +91,7 @@ fn eval_conditionals(content: &str, profile: &str) -> Result<String, String> {
                 .trim_end_matches("@@%}")
                 .trim();
 
-            include_block = eval_if_profile(condition, profile)?;
+            include_block = eval_condition(condition, profile, os)?;
             if include_block {
                 already_matched = true;
             }
@@ -95,11 +114,19 @@ fn eval_conditionals(content: &str, profile: &str) -> Result<String, String> {
     Ok(result)
 }
 
-/// Parse `if profile == "value"` condition
-fn eval_if_profile(condition: &str, profile: &str) -> Result<bool, String> {
+/// Parse `if profile == "value"` or `if os == "value"` condition (supports == and !=)
+fn eval_condition(condition: &str, profile: &str, os: &str) -> Result<bool, String> {
     let condition = condition.trim_start_matches("if").trim();
 
-    let parts: Vec<&str> = condition.splitn(2, "==").collect();
+    // Check for != first (before ==, since == is a substring)
+    let (parts, negate) = if condition.contains("!=") {
+        (condition.splitn(2, "!=").collect::<Vec<&str>>(), true)
+    } else if condition.contains("==") {
+        (condition.splitn(2, "==").collect::<Vec<&str>>(), false)
+    } else {
+        return Err(format!("unsupported condition: {condition}"));
+    };
+
     if parts.len() != 2 {
         return Err(format!("unsupported condition: {condition}"));
     }
@@ -107,13 +134,17 @@ fn eval_if_profile(condition: &str, profile: &str) -> Result<bool, String> {
     let lhs = parts[0].trim();
     let rhs = parts[1].trim().trim_matches('"');
 
-    if lhs != "profile" {
-        return Err(format!(
-            "unsupported condition variable: {lhs} (only 'profile' supported)"
-        ));
-    }
+    let result = match lhs {
+        "profile" => profile == rhs,
+        "os" => os == rhs,
+        _ => {
+            return Err(format!(
+                "unsupported condition variable: {lhs} (only 'profile' and 'os' supported)"
+            ))
+        }
+    };
 
-    Ok(profile == rhs)
+    Ok(if negate { !result } else { result })
 }
 
 /// Replace all `{{@@ key.path @@}}` with resolved variable values
